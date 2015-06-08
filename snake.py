@@ -6,8 +6,9 @@
 
 import os
 import pickle
-from random import randint, randrange
+from random import randint, randrange, random
 import tkinter as tk
+
 
 class Snake:
     def __init__(self):
@@ -16,11 +17,16 @@ class Snake:
         self.HEIGHT = 500
         self.BOREDER = 20
         self.background_color = 'lightblue'
-        self.board_color = 'coral'
+        self.board_color = 'lightgreen'
         self.prey_color = '#ffff33'
+        #randomly produce shades of orange for the snake color
+        #self.snake_color = lambda:"#%02x%02x%02x" % (255, randint(50,150),randint(50,150)//2)
+        shade = lambda :randint(50,150)
+        self.snake_color = lambda :"#%02x%02x%02x" % (255, shade(),00)
+        
         self.font = 'Helvetica'
         # Milliseconds till refresh lower is harder
-        self.speed = 80
+        self.speed = 100
 
         ## tk
         self.root = tk.Tk()
@@ -51,7 +57,7 @@ class Snake:
         self.top_scores = None
         self.display_top_scores()
 
-        self.heading = 'Left'
+        self.heading_queue = []
         self.active_game = False
         self.queue = 0
 
@@ -106,10 +112,8 @@ class Snake:
 
     ## snake and food blocks
     def add_snake_block(self,x,y):
-        c = '0123456789abcdef'
-        color = '#{}ff'.format(c[randint(0,15)],)
 
-        block_id = self.canvas.create_rectangle(x,y,x+20,y+20, fill=color,outline='')
+        block_id = self.canvas.create_rectangle(x,y,x+20,y+20, fill=self.snake_color(),outline='')
         self.snake.append(block_id)
 
     def draw_food(self,x,y):
@@ -119,15 +123,15 @@ class Snake:
         for i in self.snake:
             self.canvas.delete(i)
         self.snake = []
-        self.add_snake_block(700,300)
+        self.add_snake_block(200,300)
 
     def reset_food(self):
         self.canvas.delete(self.food)
-        self.food = self.draw_food(200,300)
+        self.food = self.draw_food(700,300)
 
     def move_food(self):
         free_squares = list(self.free_blocks())
-        location = free_squares[randint(0,len(free_squares))]
+        location = free_squares[randint(0,len(free_squares)-1)]
 
 
         x = location[0]
@@ -153,23 +157,25 @@ class Snake:
         '''Changes the direction of the snake except for going back on its self
         '''
         key = event.keysym
-        if (key == 'w' or key == 'Up') and self.heading != 'Down':
-            self.heading = 'Up'
-        elif (key == 'a' or key == 'Left') and self.heading != 'Right':
-            self.heading = 'Left'
-        elif (key == 's' or key == 'Down') and self.heading != 'Up':
-            self.heading = 'Down'
-        elif (key == 'd' or key == 'Right') and self.heading != 'Left':
-            self.heading = 'Right'
+        if (key == 'w' or key == 'Up') and self.heading_queue[-1] != 'Down':
+            self.heading_queue.append('Up')
+        elif (key == 'a' or key == 'Left') and self.heading_queue[-1] != 'Right':
+            self.heading_queue.append('Left')
+        elif (key == 's' or key == 'Down') and self.heading_queue[-1] != 'Up':
+            self.heading_queue.append('Down')
+        elif (key == 'd' or key == 'Right') and self.heading_queue[-1] != 'Left':
+            self.heading_queue.append('Right')
  
     def handel_return(self,event=None):
         ''' Starts the game if not started already'''
         if not self.active_game:
             self.active_game = True
             self.display_instructions()
+            # reset components
             self.reset_snake()
             self.reset_food()
-            self.heading = 'Left'
+            self.heading_queue = ['Right']
+            self.queue = 0
 
             self.start_count_down()
             # clearing the banner, instructions, and top scores
@@ -206,7 +212,10 @@ class Snake:
 
     def move_head(self):
         move = {'Left':[-20,0],'Right':[20,0],'Up':[0,-20],'Down':[0,20]}
-        self.canvas.move(self.snake[0],*move[self.heading])
+        self.canvas.move(self.snake[0],*move[self.heading_queue[0]])
+        
+        if len(self.heading_queue) > 1:
+            self.heading_queue = self.heading_queue[1:]
 
     def display_current_score(self):
         score = (len(self.snake)-1)*10
@@ -300,14 +309,4 @@ class Snake:
 if __name__ == '__main__':
     Snake()
     tk.mainloop()
-
-
-
-
-
-
-
-
-
-
 
